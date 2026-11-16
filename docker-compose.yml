@@ -1,0 +1,83 @@
+# Entorno de desarrollo local: PostgreSQL 16 + RustFS (S3 compatible) + API.
+# Las contraseñas salen de .env (no versionado). Copia .env.example a .env antes de empezar.
+name: siho-lite
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: siho_admin
+      POSTGRES_PASSWORD: ${POSTGRES_ADMIN_PASSWORD:?define POSTGRES_ADMIN_PASSWORD en .env}
+      POSTGRES_DB: siho
+    ports: ["5432:5432"]
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+      - ./api/test/crear-bd-pruebas.sql:/docker-entrypoint-initdb.d/01-bd-pruebas.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U siho_admin -d siho"]
+      interval: 3s
+      retries: 20
+
+  storage:
+    # RustFS: almacenamiento compatible con S3 (MinIO dejó de publicar imágenes).
+    image: rustfs/rustfs:latest
+    environment:
+      RUSTFS_ACCESS_KEY: siho-local
+      RUSTFS_SECRET_KEY: ${STORAGE_SECRET_KEY:?define STORAGE_SECRET_KEY en .env}
+      RUSTFS_ADDRESS: ":9000"
+    ports: ["9000:9000"]
+    volumes: [storagedata:/data]
+
+  storage-init:
+    build: ./api
+    command: ["node", "src/dev/crear-bucket.js"]
+    environment:
+      DOCS_BUCKET: siho-docs-local
+      S3_ENDPOINT: http://storage:9000
+      AWS_ACCESS_KEY_ID: siho-local
+      AWS_SECRET_ACCESS_KEY: ${STORAGE_SECRET_KEY}
+    depends_on: [storage]
+    restart: on-failure:10
+
+  migrate:
+    build: ./api
+    command: ["sh", "-c", "node src/db/migrate.js && node src/db/seed.js"]
+    environment: &db-env
+      NODE_ENV: development
+      DB_HOST: db
+      DB_NAME: siho
+      DB_USER: siho_app
+      DB_PASSWORD: ${DB_APP_PASSWORD:?define DB_APP_PASSWORD en .env}
+      DB_ADMIN_USER: siho_admin
+      DB_ADMIN_PASSWORD: ${POSTGRES_ADMIN_PASSWORD}
+      DB_SSL: "false"
+    depends_on:
+      db: { condition: service_healthy }
+
+  api:
+    build: ./api
+    environment:
+      <<: *db-env
+      DB_ADMIN_USER: ""
+      DB_ADMIN_PASSWORD: ""
+      PORT: "3000"
+      AUTH_MODE: dev
+      DEV_JWT_SECRET: ${DEV_JWT_SECRET:?define DEV_JWT_SECRET en .env}
+      CORS_ORIGINS: http://localhost:5173
+      DOCS_BUCKET: siho-docs-local
+      # La URL prefirmada la abre el navegador a través del proxy de Vite (mismo origen, sin CORS).
+      S3_ENDPOINT: http://localhost:5173
+      S3_FORCE_PATH_STYLE: "true"
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: siho-local
+      AWS_SECRET_ACCESS_KEY: ${STORAGE_SECRET_KEY}
+      APP_VERSION: local
+    ports: ["3000:3000"]
+    read_only: true
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      storage-init: { condition: service_completed_successfully }
+
+volumes:
+  dbdata:
+  storagedata:

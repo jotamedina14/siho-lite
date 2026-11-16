@@ -1,0 +1,27 @@
+# Secretos y configuración local
+.env
+*.env
+!.env.example
+loadtest/.secrets*
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+tfplan*
+crash.log
+.terraform.tfstate.lock.info
+infra/terraform.tfvars
+
+# Node / Python
+node_modules/
+dist/
+coverage/
+__pycache__/
+.venv/
+*.pyc
+
+# Sistema
+.DS_Store
+*.log
