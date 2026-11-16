@@ -4,6 +4,24 @@ Prototipo del módulo de admisiones, agenda de citas y documentos clínicos del 
 
 El diseño completo está en [`CLAUDE.md`](CLAUDE.md) y la bitácora en [`docs/bitacora.md`](docs/bitacora.md).
 
+## Arquitectura
+
+![Arquitectura de SIHO Lite en AWS](docs/arquitectura/arquitectura.png)
+
+1. **Usuarios.** El personal del hospital entra desde el navegador por HTTPS e inicia sesión con Amazon Cognito (MFA TOTP obligatoria y grupos `admin`, `admisiones` y `medico`).
+2. **Borde.** Amazon CloudFront, protegido por AWS WAF, sirve el frontend y reenvía `/api/*` al balanceador con una cabecera secreta. El balanceador solo acepta tráfico de CloudFront.
+3. **Entrada.** El Application Load Balancer envía cada solicitud a la tarea con menos solicitudes pendientes. El frontend en React vive en un bucket S3 privado (OAC).
+4. **API.** Node.js 22 en ECS Fargate, de 2 a 6 tareas en dos zonas de disponibilidad. Application Auto Scaling escala por CPU (60 %), por solicitudes por tarea (300 por minuto) y con una acción programada para el pico de las 6:15 a. m.
+5. **Datos.** RDS PostgreSQL 16 cifrada, en subred privada y con TLS obligatorio; documentos clínicos en S3 con SSE-KMS, subidos y descargados con URL prefirmadas.
+
+Versión editable: [`docs/arquitectura/arquitectura.svg`](docs/arquitectura/arquitectura.svg). Versión autónoma, con los íconos incrustados, para Word o PowerPoint: [`arquitectura-autonomo.svg`](docs/arquitectura/arquitectura-autonomo.svg).
+
+## Resultados de la prueba de carga
+
+Escalones de 20 a 180 usuarios simultáneos: **68.413 solicitudes, 0 fallidas**, p95 de 140 ms visto por el usuario (16 a 44 ms en el servidor). El servicio escaló solo de 2 a 6 tareas y repartió la carga de forma pareja (coeficiente de variación de 0,7 % entre tareas). Detalle en [`docs/resultados/escalones/resumen.md`](docs/resultados/escalones/resumen.md).
+
+![Carga y escalado](docs/resultados/escalones/1_carga_y_escalado.png)
+
 ## Correr en local
 
 Requisitos: Docker con Compose, Node.js 22 o superior.

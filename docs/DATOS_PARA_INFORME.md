@@ -72,7 +72,7 @@ Totales de la prueba (cliente, incluye el viaje por internet Colombia → Virgin
 
 | Figura del informe | Archivo |
 |---|---|
-| Figura 1. Arquitectura | `docs/arquitectura.png` |
+| Figura 1. Arquitectura | `docs/arquitectura/arquitectura.png` (SVG editable al lado) |
 | Figura 2. Solicitudes por segundo y latencia | `1_carga_y_escalado.png` (usuarios, solicitudes/s y tareas) y `2_latencias_cliente.png` |
 | Figura 3. Tareas frente a la carga (ciclo completo) | `6_ciclo_completo_tareas.png` (*pendiente*, cuando el servicio vuelva a 2) |
 | Figura 4. CPU y solicitudes por tarea | `5_cpu_vs_solicitudes_por_tarea.png` |

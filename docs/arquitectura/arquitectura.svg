@@ -1,0 +1,157 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="arq" viewBox="-20 -20 1332 579" role="img" aria-labelledby="ar-t ar-d">
+        <title id="ar-t">Arquitectura de SIHO Lite en AWS</title>
+        <desc id="ar-d">El personal del hospital (admisiones, médicos y administración) entra desde el navegador por HTTPS
+          a Amazon CloudFront, protegido por AWS WAF, e inicia sesión con Amazon Cognito usando MFA TOTP y grupos por rol.
+          CloudFront sirve el frontend en React desde un bucket de S3 privado con control de acceso de origen y reenvía
+          las rutas /api al Application Load Balancer, que reparte cada solicitud a la tarea con menos solicitudes
+          pendientes. La API en Node.js corre en Amazon ECS sobre AWS Fargate, entre 2 y 6 tareas repartidas en dos
+          zonas de disponibilidad; Application Auto Scaling ajusta el número de tareas por CPU, por solicitudes por tarea
+          y con una acción programada a las 6:15 a. m. La API guarda los datos en Amazon RDS para PostgreSQL 16, cifrada
+          y en una subred privada, con conexión TLS, y los documentos clínicos en Amazon S3 con cifrado SSE-KMS mediante
+          URL prefirmadas. De forma transversal, AWS WAF filtra ataques, IAM aplica mínimo privilegio, Secrets Manager
+          guarda las credenciales, la VPC aísla la base de datos, CloudWatch registra logs, métricas y alarmas, y Amazon
+          ECR escanea cada imagen del contenedor.</desc>
+        <style>
+          .arq {
+            --crema: #FEFCF2; --crema-2: #F7F2E4; --caqui: #A0936B;
+            --bronce: #695925; --bronce-hondo: #3A3116; --texto-2: #7A6E4F;
+            --azul-hondo: #40719F; --tinta-aws: #242F3E; --cuenta-aws: #E7157B;
+            --sans: 'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif;
+            --mono: 'IBM Plex Mono', 'Courier New', monospace;
+            font-family: var(--sans);
+          }
+          .ar-fondo { fill: var(--crema-2); }
+          .ar-nube { fill: var(--crema); stroke: var(--tinta-aws); stroke-width: 1.2; }
+          .ar-nube-t { font-size: 13px; font-weight: 600; fill: var(--tinta-aws); }
+          .ar-etapa { font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: .08em; fill: var(--azul-hondo); }
+          .ar-grupo { fill: var(--crema-2); stroke: rgba(160,147,107,.65); stroke-width: 1.1; stroke-dasharray: 5 4; }
+          .ar-agente { fill: var(--crema); stroke: var(--azul-hondo); stroke-width: 1.6; stroke-dasharray: none; }
+          .ar-n { font-size: 13px; font-weight: 600; fill: var(--bronce-hondo); }
+          .ar-s { font-size: 12px; fill: var(--texto-2); }
+          .ar-mono { font-family: var(--mono); font-size: 11px; fill: var(--texto-2); }
+          .ar-proto { font-family: var(--mono); font-size: 10.5px; font-weight: 600; letter-spacing: .06em; fill: var(--bronce); }
+          .ar-banda { fill: var(--crema-2); }
+          .ar-capa { font-family: var(--mono); font-size: 10.5px; font-weight: 600; letter-spacing: .12em; fill: var(--azul-hondo); }
+          .ar-sep { stroke: rgba(160,147,107,.35); stroke-width: 1; }
+          .ar-linea { fill: none; stroke: var(--bronce); stroke-width: 1.6; }
+          .ar-prog { fill: none; stroke: var(--bronce); stroke-width: 1.4; stroke-dasharray: 4 4; }
+          .ar-pta { fill: var(--bronce); }
+        </style>
+        <defs>
+          <marker id="ar-m" viewBox="0 0 10 10" refX="10" refY="5" markerUnits="userSpaceOnUse"
+                  markerWidth="9" markerHeight="9" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" class="ar-pta"/></marker>
+        </defs>
+        <rect class="ar-fondo" x="-20" y="-20" width="1332" height="579"/>
+
+        <!-- Nube de AWS -->
+        <rect class="ar-nube" x="166" y="28" width="1126" height="511"/>
+        <image href="aws/grupos/AWS-Cloud-logo_32.svg" x="166" y="28" width="32" height="32"><title>AWS Cloud</title></image>
+        <text class="ar-nube-t" x="208" y="48">AWS Cloud · us-east-1</text>
+
+        <!-- Etapas: 01 x=72 · 02 x=310 · 03 x=560 · 04 x=800 · 05 x=1131 -->
+        <g text-anchor="middle"><text class="ar-etapa" x="72" y="92">01 · USUARIOS</text><text class="ar-etapa" x="310" y="92">02 · BORDE</text><text class="ar-etapa" x="560" y="92">03 · ENTRADA</text><text class="ar-etapa" x="800" y="92">04 · API</text><text class="ar-etapa" x="1131" y="92">05 · DATOS</text></g>
+
+        <!-- Grupos: el corazón (API con autoescalado) y los datos -->
+        <rect class="ar-grupo ar-agente" x="700" y="112" width="200" height="271" rx="6"/>
+        <rect class="ar-grupo" x="990" y="112" width="282" height="271" rx="6"/>
+
+        <!-- Líneas -->
+        <!-- Usuario ↔ CloudFront: ida y vuelta -->
+        <path class="ar-linea" d="M100,164 H284" marker-end="url(#ar-m)"/>
+        <path class="ar-linea" d="M284,180 H100" marker-end="url(#ar-m)"/>
+        <text class="ar-proto" x="192" y="157" text-anchor="middle">HTTPS</text>
+        <!-- Inicio de sesión -->
+        <path class="ar-prog" d="M72,256 V292 H284" marker-end="url(#ar-m)"/>
+        <text class="ar-proto" x="192" y="285" text-anchor="middle">login</text>
+        <!-- CloudFront reparte: /api/* al ALB y /* al frontend -->
+        <path class="ar-linea" d="M336,172 H534" marker-end="url(#ar-m)"/>
+        <path class="ar-linea" d="M440,172 V292 H534" marker-end="url(#ar-m)"/>
+        <text class="ar-proto" x="487" y="165" text-anchor="middle">/api/*</text>
+        <text class="ar-proto" x="487" y="285" text-anchor="middle">/*</text>
+        <!-- ALB → tareas de la API -->
+        <path class="ar-linea" d="M586,172 H772" marker-end="url(#ar-m)"/>
+        <text class="ar-proto" x="643" y="165" text-anchor="middle">HTTP</text>
+        <!-- API reparte: TLS a RDS y HTTPS a S3 -->
+        <path class="ar-linea" d="M828,172 H1002" marker-end="url(#ar-m)"/>
+        <path class="ar-linea" d="M930,172 V292 H1002" marker-end="url(#ar-m)"/>
+        <text class="ar-proto" x="962" y="165" text-anchor="middle">TLS</text>
+        <text class="ar-proto" x="962" y="285" text-anchor="middle">HTTPS</text>
+
+        <!-- 01 · USUARIOS -->
+        <image href="aws/recursos/Res_Users_48_Light.svg" x="48" y="148" width="48" height="48"><title>Usuarios</title></image>
+        <text class="ar-n" x="72" y="214" text-anchor="middle">Personal del hospital</text>
+        <text class="ar-s" x="72" y="230" text-anchor="middle">admisiones, médicos</text>
+        <text class="ar-s" x="72" y="245" text-anchor="middle">y administración</text>
+
+        <!-- 02 · BORDE -->
+        <image href="aws/servicios/Arch_Amazon-CloudFront_64.svg" x="288" y="150" width="44" height="44"><title>Amazon CloudFront</title></image>
+        <text class="ar-n" x="310" y="212" text-anchor="middle">CloudFront</text>
+        <text class="ar-s" x="310" y="228" text-anchor="middle">HTTPS · caché</text>
+        <text class="ar-s" x="310" y="243" text-anchor="middle">frontend y API</text>
+        <image href="aws/servicios/Arch_Amazon-Cognito_64.svg" x="288" y="270" width="44" height="44"><title>Amazon Cognito</title></image>
+        <text class="ar-n" x="310" y="332" text-anchor="middle">Cognito</text>
+        <text class="ar-s" x="310" y="348" text-anchor="middle">inicio de sesión</text>
+        <text class="ar-s" x="310" y="363" text-anchor="middle">MFA TOTP · 3 roles</text>
+
+        <!-- 03 · ENTRADA -->
+        <image href="aws/servicios/Arch_Elastic-Load-Balancing_64.svg" x="538" y="150" width="44" height="44"><title>Application Load Balancer</title></image>
+        <text class="ar-n" x="560" y="212" text-anchor="middle">Balanceador ALB</text>
+        <text class="ar-s" x="560" y="228" text-anchor="middle">menos solicitudes</text>
+        <text class="ar-s" x="560" y="243" text-anchor="middle">pendientes · 2 zonas</text>
+        <image href="aws/servicios/Arch_Amazon-Simple-Storage-Service_64.svg" x="538" y="270" width="44" height="44"><title>Amazon S3</title></image>
+        <text class="ar-n" x="560" y="332" text-anchor="middle">Frontend React</text>
+        <text class="ar-s" x="560" y="348" text-anchor="middle">S3 privado · OAC</text>
+
+        <!-- 04 · API: el corazón del sistema -->
+        <image href="aws/servicios/Arch_AWS-Fargate_64.svg" x="776" y="148" width="48" height="48"><title>AWS Fargate</title></image>
+        <text class="ar-n" x="800" y="214" text-anchor="middle">API SIHO Lite</text>
+        <text class="ar-s" x="800" y="230" text-anchor="middle">Node.js 22 · ECS Fargate</text>
+        <text class="ar-mono" x="800" y="246" text-anchor="middle">siho-lite-api</text>
+        <image href="aws/servicios/Arch_AWS-Application-Auto-Scaling_64.svg" x="778" y="270" width="44" height="44"><title>Application Auto Scaling</title></image>
+        <text class="ar-n" x="800" y="332" text-anchor="middle">Autoescalado</text>
+        <text class="ar-s" x="800" y="348" text-anchor="middle">de 2 a 6 tareas</text>
+        <text class="ar-s" x="800" y="363" text-anchor="middle">CPU · solicitudes · 6:15</text>
+
+        <!-- 05 · DATOS: filas -->
+        <line class="ar-sep" x1="1004" y1="238" x2="1258" y2="238"/>
+        <image href="aws/servicios/Arch_Amazon-RDS_64.svg" x="1006" y="152" width="40" height="40"><title>Amazon RDS</title></image>
+        <text class="ar-capa" x="1060" y="156">BASE DE DATOS</text>
+        <text class="ar-n" x="1060" y="174">PostgreSQL 16</text>
+        <text class="ar-s" x="1060" y="190">RDS · cifrada con KMS</text>
+        <text class="ar-s" x="1060" y="205">subred privada · TLS</text>
+        <image href="aws/servicios/Arch_Amazon-Simple-Storage-Service_64.svg" x="1006" y="272" width="40" height="40"><title>Amazon S3</title></image>
+        <text class="ar-capa" x="1060" y="276">DOCUMENTOS</text>
+        <text class="ar-n" x="1060" y="294">Documentos clínicos</text>
+        <text class="ar-s" x="1060" y="310">S3 · SSE-KMS · versionado</text>
+        <text class="ar-s" x="1060" y="325">URL prefirmadas 5 min</text>
+
+        <!-- Banda de seguridad y operación -->
+        <rect class="ar-grupo ar-banda" x="186" y="405" width="1086" height="118" rx="6"/>
+        <text class="ar-etapa" x="204" y="429">SEGURIDAD Y OPERACIÓN</text>
+        <text class="ar-s" x="1254" y="429" text-anchor="end">cifrado en reposo y en tránsito · base de datos sin acceso a internet · solo datos sintéticos</text>
+        <image href="aws/servicios/Arch_AWS-WAF_64.svg" x="204" y="451" width="36" height="36"><title>AWS WAF</title></image>
+        <text class="ar-n" x="250" y="461">AWS WAF</text>
+        <text class="ar-s" x="250" y="477">OWASP, SQLi y</text>
+        <text class="ar-s" x="250" y="492">límite por IP</text>
+        <image href="aws/servicios/Arch_AWS-Identity-and-Access-Management_64.svg" x="380" y="451" width="36" height="36"><title>AWS IAM</title></image>
+        <text class="ar-n" x="426" y="461">IAM</text>
+        <text class="ar-s" x="426" y="477">mínimo privilegio</text>
+        <text class="ar-s" x="426" y="492">rol por tarea</text>
+        <image href="aws/servicios/Arch_AWS-Secrets-Manager_64.svg" x="556" y="451" width="36" height="36"><title>AWS Secrets Manager</title></image>
+        <text class="ar-n" x="602" y="461">Secrets Manager</text>
+        <text class="ar-s" x="602" y="477">credenciales de RDS</text>
+        <text class="ar-s" x="602" y="492">y cabecera de origen</text>
+        <image href="aws/servicios/Arch_Amazon-Virtual-Private-Cloud_64.svg" x="732" y="451" width="36" height="36"><title>Amazon VPC</title></image>
+        <text class="ar-n" x="778" y="461">Amazon VPC</text>
+        <text class="ar-s" x="778" y="477">2 zonas; la base</text>
+        <text class="ar-s" x="778" y="492">en subred privada</text>
+        <image href="aws/servicios/Arch_Amazon-CloudWatch_64.svg" x="908" y="451" width="36" height="36"><title>Amazon CloudWatch</title></image>
+        <text class="ar-n" x="954" y="461">CloudWatch</text>
+        <text class="ar-s" x="954" y="477">logs, alarmas</text>
+        <text class="ar-s" x="954" y="492">y dashboard</text>
+        <image href="aws/servicios/Arch_Amazon-Elastic-Container-Registry_64.svg" x="1084" y="451" width="36" height="36"><title>Amazon ECR</title></image>
+        <text class="ar-n" x="1130" y="461">Amazon ECR</text>
+        <text class="ar-s" x="1130" y="477">imagen escaneada</text>
+        <text class="ar-s" x="1130" y="492">al publicarla</text>
+      </svg>
