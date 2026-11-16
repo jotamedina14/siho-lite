@@ -165,6 +165,27 @@ def main(carpeta: Path):
     fig.savefig(carpeta / "3_servidor_latencia_y_cpu.png", bbox_inches="tight")
     plt.close(fig)
 
+    # 5. Las dos métricas del autoescalado frente a su objetivo: solicitudes por tarea (sí lo disparó) y CPU (no).
+    if "solicitudes" in cw and "cpu" in cw:
+        fig, (a, b) = plt.subplots(2, 1, figsize=(10, 6), sharex=True, gridspec_kw={"hspace": 0.4})
+        a.plot(cw.index, cw["solicitudes"], color=AZUL)
+        a.axhline(300, color=MUTED, linestyle="--", linewidth=1)
+        a.annotate("objetivo: 300 por minuto por tarea", (1, 300), xycoords=("axes fraction", "data"), xytext=(-4, 4),
+                   textcoords="offset points", ha="right", color=TEXTO_2, fontsize=8)
+        a.set_title("Solicitudes por minuto por tarea (ALBRequestCountPerTarget): disparó el escalado")
+        a.set_ylim(bottom=0)
+        b.plot(cw.index, cw["cpu"], color=AZUL)
+        b.axhline(60, color=MUTED, linestyle="--", linewidth=1)
+        b.annotate("objetivo: 60 %", (1, 60), xycoords=("axes fraction", "data"), xytext=(-4, 4),
+                   textcoords="offset points", ha="right", color=TEXTO_2, fontsize=8)
+        b.set_title("CPU promedio del servicio (%): nunca llegó a su objetivo")
+        b.set_ylim(0, 100)
+        for ax in (a, b):
+            formato_tiempo(ax)
+        b.set_xlabel("Hora (Colombia)")
+        fig.savefig(carpeta / "5_cpu_vs_solicitudes_por_tarea.png", bbox_inches="tight")
+        plt.close(fig)
+
     # 4. Distribución de solicitudes por tarea (balanceo least outstanding requests).
     # Se mide solo en los intervalos en que estaban activas todas las tareas del máximo: si se suma toda
     # la prueba, las tareas que vivieron más tiempo parecen "recibir más" y se esconde el balanceo.
