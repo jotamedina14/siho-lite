@@ -132,6 +132,7 @@ class Escenario(LoadTestShape):
         "escalones": [(300, 20, 2), (600, 60, 4), (900, 120, 6), (1200, 180, 6), (1500, 10, 10)],
         "rafaga": [(60, 10, 2), (90, 200, 7), (390, 200, 7), (570, 10, 10)],
         "corta": [(60, 10, 2), (240, 60, 3)],  # verificación rápida del escalado
+        "valle": [(1500, 5, 1)],  # carga nocturna: deja datos en la métrica para que el servicio reduzca
     }[ESCENARIO]
 
     def tick(self):

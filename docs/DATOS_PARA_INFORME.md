@@ -25,6 +25,16 @@ Todos los datos salen de `docs/resultados/escalones/`, `docs/bitacora.md`, `docs
 | Referencias, Rajammal | Sin volumen ni número de artículo | Rajammal, K., & Chinnadurai, M. (2025). Dynamic load balancing in cloud computing using predictive graph networks and adaptive neural scheduling. *Scientific Reports, 15*, Artículo 22181. https://doi.org/10.1038/s41598-025-97494-2 |
 | Conclusiones, trabajo futuro | "[Ajustar si se implementó alguno]" | **Ninguno se implementó** (ni GitHub Actions ni escalador predictivo; el despliegue se hizo con `scripts/deploy.sh`) |
 
+### Retos adicionales para la Tabla 5 (fila "[Otros retos de la bitácora]")
+
+| Reto | Causa | Solución |
+|---|---|---|
+| El servicio no volvía a 2 tareas al terminar la prueba | El autoescalado solo reduce si todas las políticas lo permiten; con tráfico cero, la métrica de solicitudes por tarea no tiene datos y bloquea la reducción | Se simuló el tráfico nocturno de fondo (5 usuarios); en producción el tráfico nunca es cero |
+| La prueba de carga desde un solo equipo habría chocado con el WAF | La regla de límite de tasa bloquea más de 1.000 solicitudes en 5 minutos por IP | Se excluyó la IP del equipo de pruebas de esa regla con un IP set del WAF |
+| MinIO ya no publica imágenes de Docker | El proyecto dejó de distribuir la edición comunitaria | Se usó RustFS, compatible con S3, para el entorno local |
+| Las URL prefirmadas fallaban desde el navegador | Las versiones recientes del SDK de AWS agregan checksums automáticos que el navegador no puede reproducir | Se desactivó el checksum automático y se firmó explícitamente el SHA-256 del archivo |
+| Datos personales visibles en las capturas | El número de cuenta y la IP aparecen en la consola | Copias pixeladas con OCR para el informe |
+
 ## 2. Datos que faltaban
 
 | Dato | Valor |
