@@ -41,3 +41,14 @@ El estudiante pidió explícitamente una solución sencilla y de bajo costo. Se 
 Local (ya tomadas en `docs/capturas/local/`): login, pacientes con indicador de tarea/AZ, búsqueda, ficha con documento subido, agenda, admisiones, reporte de ocupación, auditoría.
 
 AWS (pendientes): consola de ECS con tareas en dos AZ; target group con destinos sanos; gráfica de tareas subiendo durante la carga; dashboard de CloudWatch; reglas de WAF y una solicitud bloqueada; bucket con bloqueo de acceso público y cifrado; RDS cifrada y en subred privada; Cognito con MFA; reporte de escaneo de la imagen en ECR; Budgets; la app funcionando por CloudFront con el indicador de tarea/AZ.
+
+## Fase 2. Infraestructura (16 nov 2026)
+
+- Cuenta personal [ID-CUENTA] (plan pagado con USD 103,47 en créditos). La raíz tiene MFA activo.
+- **Decisión consciente:** se trabajó con credenciales temporales de la raíz obtenidas con `aws login` (sin llaves de larga duración). En producción se usaría IAM Identity Center o un rol de administración. El perfil `siho` está aislado de los perfiles de trabajo que existen en el equipo, y `scripts/entorno_aws.sh` impide desplegar si el perfil apunta a otra cuenta.
+- Presupuesto `SIHO-Lite-20USD` creado con la CLI antes que cualquier otro recurso. Desde el 30 de septiembre de 2026, AWS exige verificar el correo de los destinatarios nuevos de Budgets.
+- `terraform plan`: 85 recursos por crear. Se aplicó en dos pasos: primero ECR (para publicar la imagen) y luego el resto con la etiqueta real de la imagen. Así el servicio arranca con una imagen que ya existe.
+- La IP pública desde donde se lanza Locust se excluye de la regla de límite de tasa del WAF (1.000 solicitudes en 5 minutos por IP). Sin esa excepción, la prueba de carga desde un solo equipo quedaría bloqueada por el propio WAF.
+
+### Hallazgo de costos previos de la cuenta
+Al revisar la factura de noviembre aparecieron unos USD 6 brutos (USD 0 netos, cubiertos por créditos) que no son del proyecto: una instancia EC2 t3.micro `rag-tunnel` con IP elástica encendida desde el 7 de octubre (USD 3,80 de cómputo, USD 1,84 de IPv4 pública y USD 0,32 de EBS en el mes) y una zona de Route 53 (USD 0,50/mes). Se dejan para que el dueño decida al final.
