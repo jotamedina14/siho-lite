@@ -25,3 +25,4 @@ __pycache__/
 # Sistema
 .DS_Store
 *.log
+.aws-cuenta-siho
