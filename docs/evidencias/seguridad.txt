@@ -1,0 +1,62 @@
+SIHO Lite - pruebas de seguridad contra https://d2b8b221bu4poi.cloudfront.net
+Fecha: 2026-11-16 17:58:32 (hora de Colombia)
+
+$ curl -I http://d2b8b221bu4poi.cloudfront.net/health    # HTTP se redirige a HTTPS
+HTTP/1.1 301 Moved Permanently
+Location: https://d2b8b221bu4poi.cloudfront.net/health
+
+$ curl -I https://d2b8b221bu4poi.cloudfront.net/health    # cabeceras de seguridad
+HTTP/2 200 
+content-security-policy: default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests
+referrer-policy: no-referrer
+strict-transport-security: max-age=31536000; includeSubDomains
+x-content-type-options: nosniff
+x-frame-options: SAMEORIGIN
+x-task-id: 1bdeb3742d824af9a5a192a81fe7cbd5
+x-az: us-east-1b
+via: 1.1 df5fdcc2a63c69718460ed00649f9850.cloudfront.net (CloudFront)
+
+$ curl https://d2b8b221bu4poi.cloudfront.net/health
+{"status":"ok","db":"ok","version":"v20261116-174048-8a5aa81"}
+
+$ curl https://d2b8b221bu4poi.cloudfront.net/api/pacientes    # sin token
+HTTP 401  -> 401 no autenticado
+
+$ curl https://d2b8b221bu4poi.cloudfront.net/api/pacientes -H 'Authorization: Bearer <token falso>'
+HTTP 401  -> 401 token inválido
+
+$ curl -X POST https://d2b8b221bu4poi.cloudfront.net/api/pacientes -H 'Authorization: Bearer <token rol medico>'    # rol sin permiso
+HTTP 403  -> 403 prohibido (médico no crea pacientes)
+
+$ curl https://d2b8b221bu4poi.cloudfront.net/api/reportes/ocupacion -H 'Authorization: Bearer <token rol medico>'
+HTTP 403  -> 403 (solo admin)
+
+$ curl https://d2b8b221bu4poi.cloudfront.net/api/info -H 'Authorization: Bearer <token rol medico>'    # token válido de Cognito
+{"taskId":"1bdeb3742d824af9a5a192a81fe7cbd5","az":"us-east-1b","version":"v20261116-174048-8a5aa81","usuario":{"email":"medico@siho-lite.example","grupos":["medico"]}}
+
+$ curl "https://d2b8b221bu4poi.cloudfront.net/api/pacientes?q=' OR 1=1--"    # inyección SQL: la bloquea el WAF antes de llegar a la API
+HTTP 403
+
+$ curl "https://d2b8b221bu4poi.cloudfront.net/api/pacientes?q=<script>alert(1)</script>"    # XSS: bloqueado por el WAF
+HTTP 403
+
+$ curl --max-time 8 http://siho-lite-alb-339024720.us-east-1.elb.amazonaws.com/health    # acceso directo al ALB, saltándose CloudFront
+Sin respuesta (tiempo agotado): el grupo de seguridad solo admite IPs de origen de CloudFront
+
+$ curl https://siho-lite-documentos-[ID-CUENTA].s3.amazonaws.com/    # bucket de documentos sin acceso público
+<Code>AccessDenied</Code>
+
+$ aws s3api get-public-access-block --bucket siho-lite-documentos-[ID-CUENTA]
+{"BlockPublicAcls":true,"IgnorePublicAcls":true,"BlockPublicPolicy":true,"RestrictPublicBuckets":true}
+
+$ aws s3api get-bucket-encryption --bucket siho-lite-documentos-[ID-CUENTA]
+{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"aws:kms"},"BucketKeyEnabled":true,"BlockedEncryptionTypes":{"EncryptionType":["SSE-C"]}}
+
+$ aws rds describe-db-instances  # cifrado, acceso público, subred privada
+{"cifrada":true,"publica":false,"motor":"16.13","clase":"db.t4g.micro","respaldos_dias":7,"multiAZ":false}
+
+$ aws rds describe-db-parameters  # TLS obligatorio
+rds.force_ssl	1
+
+$ aws cognito-idp describe-user-pool  # MFA y política de contraseñas
+{"MFA":"ON","longitud_minima":12,"solo_admin_crea_usuarios":true}

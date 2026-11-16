@@ -73,6 +73,12 @@ def correr(base: str, salida: Path, modo: str, tokens: dict):
         page.goto(base + "/")
         expect(page.locator(".login__tarjeta")).to_be_visible()
         r.captura("login")
+        if modo == "cognito":
+            # Pantalla de managed login de Cognito (no se escriben credenciales en el formulario).
+            page.get_by_role("button", name="Iniciar sesión con Amazon Cognito").click()
+            page.wait_for_url("**amazoncognito.com/**", timeout=20000)
+            page.wait_for_timeout(2500)
+            r.captura("login_cognito_managed_login")
 
         print("Rol admisiones: búsqueda, ficha, documento, agenda y admisiones")
         r.entrar("admisiones")
