@@ -14,8 +14,9 @@ RUN wget -q -O /rds-global-bundle.pem https://truststore.pki.rds.amazonaws.com/g
 FROM node:22-alpine
 ENV NODE_ENV=production
 WORKDIR /app
-# Se quitan npm, npx y yarn de la imagen final: no se necesitan en ejecución.
-RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx /opt/yarn-* /usr/local/bin/yarn /usr/local/bin/yarnpkg
+# Parches de seguridad del sistema base (p. ej. CVE-2026-4738 en zlib, detectado por el escaneo de ECR)
+# y se quitan npm, npx y yarn de la imagen final: no se necesitan en ejecución.
+RUN apk upgrade --no-cache && rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx /opt/yarn-* /usr/local/bin/yarn /usr/local/bin/yarnpkg
 COPY --from=deps --chown=root:root /app/node_modules ./node_modules
 COPY --from=certs --chown=root:root /rds-global-bundle.pem ./certs/rds-global-bundle.pem
 COPY --chown=root:root package.json ./

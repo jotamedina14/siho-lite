@@ -53,7 +53,7 @@ Despliegues posteriores de la API sin cortes: `scripts/deploy.sh api`.
 
 ```bash
 URL=$(terraform -chdir=infra output -raw url_app)
-ESCENARIO=escalones .venv/bin/locust -f loadtest/locustfile.py --host $URL --headless \
+ESCENARIO=escalones .venv/bin/locust -f loadtest/locustfile.py --host $URL --headless --csv-full-history \
   --csv docs/resultados/escalones/locust --html docs/resultados/escalones/locust.html
 .venv/bin/python loadtest/analizar.py docs/resultados/escalones
 ```

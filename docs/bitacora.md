@@ -52,3 +52,23 @@ AWS (pendientes): consola de ECS con tareas en dos AZ; target group con destinos
 
 ### Hallazgo de costos previos de la cuenta
 Al revisar la factura de noviembre aparecieron unos USD 6 brutos (USD 0 netos, cubiertos por créditos) que no son del proyecto: una instancia EC2 t3.micro `rag-tunnel` con IP elástica encendida desde el 7 de octubre (USD 3,80 de cómputo, USD 1,84 de IPv4 pública y USD 0,32 de EBS en el mes) y una zona de Route 53 (USD 0,50/mes). Se dejan para que el dueño decida al final.
+
+## Fase 2 a 6. Despliegue, seguridad, escalado y pruebas (16 nov 2026)
+
+- `terraform apply`: 85 recursos en unos 15 minutos (RDS y CloudFront son los más lentos). App en `https://d2b8b221bu4poi.cloudfront.net`.
+- Migraciones y seed por una tarea única de ECS con TLS verificado contra la CA de RDS.
+- Usuarios de prueba en Cognito con MFA TOTP configurada por API (`loadtest/cognito.py`); los secretos TOTP quedan en un archivo local no versionado.
+- Pruebas de seguridad por la URL pública (`docs/evidencias/seguridad.txt`): todas pasaron.
+- Recorrido de extremo a extremo con Playwright en la nube, incluida la subida real de un PDF a S3 con SHA-256 y SSE-KMS.
+
+### Problemas
+- **16 nov. La primera tarea quedó en un ciclo de reinicio.** Síntoma: una de las dos tareas no pasaba el health check al terminar el `apply`. Causa: `/health` consulta la base de datos y el rol `siho_app` aún no existía (las migraciones se corren después del `apply`). Solución: correr `scripts/deploy.sh migrar` apenas termina el `apply`; ECS reemplazó la tarea sola. Mejora futura: health check de "vida" separado del de "preparación".
+- **16 nov. `boto3` no podía usar la sesión de `aws login`.** Error `MissingDependencyException`. Solución: instalar `botocore[crt]`.
+- **16 nov. El escaneo de ECR no aparecía en la imagen etiquetada.** Causa: `docker buildx` publica por defecto un índice de imagen con atestación de procedencia, y el escaneo básico de ECR analiza el manifiesto de la imagen, no el índice. Solución: consultar el escaneo en el manifiesto hijo y construir con `--provenance=false --sbom=false` en adelante.
+- **16 nov. Vulnerabilidad crítica CVE-2026-4738 en `zlib` 1.3.2-r1** de la imagen base `node:22-alpine`, detectada por el escaneo de ECR. Alpine ya publicó `zlib` 1.4-r0. Solución: `apk upgrade --no-cache` en la etapa final del Dockerfile y redespliegue sin cortes.
+- **16 nov. Capturas con el puntero visible.** Se retomaron todas moviendo el puntero fuera del contenido antes de cada captura.
+
+### Prueba de carga por escalones (resultados preliminares, ver `docs/resultados/escalones/`)
+- 18:00 inicio con 20 usuarios y 2 tareas. 18:05 la política `ALBRequestCountPerTarget` (> 300 por minuto por tarea) subió a 3 tareas; 18:08 subió a 6 (el máximo).
+- La CPU de las tareas se mantuvo alrededor del 20 %: **el escalado lo disparó la política de solicitudes y no la de CPU**. Para esta carga de lectura el cuello de botella previsible es la base de datos (RDS llegó a ~29 % de CPU), no el cómputo de la API.
+- **Resiliencia (18:11):** con 120 usuarios se detuvo a mano una tarea de us-east-1a. El ALB la pasó a "draining", las otras 5 siguieron atendiendo, ECS lanzó un reemplazo en menos de 1 minuto y el servicio volvió a estado estable a las 18:12.

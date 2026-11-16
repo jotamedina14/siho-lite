@@ -17,7 +17,7 @@ construir_imagen() {
   repo=$(aws ecr describe-repositories --repository-names siho-lite-api --query 'repositories[0].repositoryUri' --output text)
   tag="v$(date +%Y%m%d-%H%M%S)-$(git rev-parse --short HEAD 2>/dev/null || echo local)"
   aws ecr get-login-password | docker login --username AWS --password-stdin "${repo%%/*}" >/dev/null 2>&1
-  docker build --platform linux/amd64 --build-arg APP_VERSION="$tag" -t "$repo:$tag" api >&2
+  docker build --platform linux/amd64 --provenance=false --sbom=false --build-arg APP_VERSION="$tag" -t "$repo:$tag" api >&2
   docker push -q "$repo:$tag" >&2
   echo "$tag"
 }

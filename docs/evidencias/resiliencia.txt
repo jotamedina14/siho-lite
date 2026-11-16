@@ -1,0 +1,6 @@
+Hora: 2026-11-16 18:11:01
+{
+    "tarea": "arn:aws:ecs:us-east-1:[ID-CUENTA]:task/siho-lite/07a7d8cd0a604e0291d2bf1e65575c03",
+    "az": "us-east-1a",
+    "estado": "STOPPED"
+}

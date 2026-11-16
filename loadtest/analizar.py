@@ -59,7 +59,7 @@ def metricas_cloudwatch(inicio, fin):
         q("cpu", "AWS/ECS", "CPUUtilization", dim_ecs, "Average"),
     ]
     r = cw.get_metric_data(MetricDataQueries=consultas, StartTime=inicio, EndTime=fin, ScanBy="TimestampAscending")
-    series = {m["Id"]: pd.Series(m["Values"], index=pd.to_datetime(m["Timestamps"]).tz_convert(ZONA)) for m in r["MetricDataResults"]}
+    series = {m["Id"]: pd.Series(m["Values"], index=pd.to_datetime(m["Timestamps"], utc=True).tz_convert(ZONA)) for m in r["MetricDataResults"]}
     return pd.DataFrame(series)
 
 
@@ -79,6 +79,9 @@ def etiqueta_final(ax, x, y, texto, color):
 
 def main(carpeta: Path):
     hist = pd.read_csv(carpeta / "locust_stats_history.csv")
+    # Con --csv-full-history hay filas por endpoint y los percentiles son de los últimos 10 s;
+    # sin esa opción solo está "Aggregated" y los percentiles son acumulados desde el inicio.
+    acumulados = not (hist["Name"] != "Aggregated").any()
     hist = hist[hist["Name"] == "Aggregated"].copy()
     hist["t"] = pd.to_datetime(hist["Timestamp"], unit="s", utc=True).dt.tz_convert(ZONA)
     for c in ["50%", "95%", "99%"]:
@@ -87,6 +90,7 @@ def main(carpeta: Path):
     # Se extiende la ventana 25 min para ver al servicio volver al mínimo (si ese tiempo ya pasó).
     fin_cw = min(fin + timedelta(minutes=25), datetime.now(timezone.utc))
     cw = metricas_cloudwatch(inicio - timedelta(minutes=2), fin_cw)
+    cw.to_csv(carpeta / "cloudwatch_metricas.csv", index_label="timestamp")  # datos crudos para rehacer gráficas
     ecs = pd.read_csv(carpeta / "ecs_tareas.csv")
     ecs["t"] = pd.to_datetime(ecs["timestamp"], unit="s", utc=True).dt.tz_convert(ZONA)
 
@@ -102,7 +106,8 @@ def main(carpeta: Path):
     if "sanas" in cw:
         c.step(cw.index, cw["sanas"], where="post", color=AQUA, label="Sanas en el ALB")
     c.set_title("Tareas de ECS Fargate")
-    c.set_ylim(0, 7)
+    c.set_ylim(0, 8.5)
+    c.set_yticks(range(0, 8, 2))
     c.legend(loc="upper left", ncols=3)
     for ax in ejes:
         formato_tiempo(ax)
@@ -111,19 +116,31 @@ def main(carpeta: Path):
     plt.close(fig)
 
     # 2. Latencias percibidas por el cliente (Locust) con los criterios de éxito.
+    # Sin --csv-full-history, Locust guarda percentiles ACUMULADOS desde el inicio; con esa opción, de los últimos 10 s.
     fig, ax = plt.subplots(figsize=(10, 4.2))
+    finales = []
     for col, color, nombre in [("50%", AZUL, "p50"), ("95%", NARANJA, "p95"), ("99%", AQUA, "p99")]:
         serie = hist[["t", col]].dropna()
         ax.plot(serie["t"], serie[col], color=color, label=nombre)
         if len(serie):
-            etiqueta_final(ax, serie["t"].iloc[-1], serie[col].iloc[-1], nombre, color)
+            finales.append([serie["t"].iloc[-1], serie[col].iloc[-1], nombre, color])
+    # Etiquetas finales separadas al menos 0,08 s para que no se encimen.
+    finales.sort(key=lambda f: f[1])
+    y_previa = -1.0
+    for f in finales:
+        y_previa = max(f[1], y_previa + 0.08)
+        f.append(y_previa)
+    for x, y, nombre, color, y_etiqueta in finales:
+        ax.plot([x], [y], "o", color=color, markersize=5)
+        ax.annotate(nombre, (x, y_etiqueta), xytext=(8, 0), textcoords="offset points", va="center", color=TEXTO_2, fontsize=9)
     ax.axhline(1, color=MUTED, linestyle="--", linewidth=1)
     ax.axhline(2, color=MUTED, linestyle=":", linewidth=1)
-    ax.annotate("criterio p95 carga base: 1 s", (inicio, 1), xytext=(4, 4), textcoords="offset points", color=TEXTO_2, fontsize=8)
-    ax.annotate("criterio p95 pico: 2 s", (inicio, 2), xytext=(4, 4), textcoords="offset points", color=TEXTO_2, fontsize=8)
-    ax.set_title("Latencia percibida por el usuario (s), medida por Locust")
+    ax.annotate("criterio p95 carga base: 1 s", (1, 1), xycoords=("axes fraction", "data"), xytext=(-4, 4), textcoords="offset points", ha="right", color=TEXTO_2, fontsize=8)
+    ax.annotate("criterio p95 pico: 2 s", (1, 2), xycoords=("axes fraction", "data"), xytext=(-4, 4), textcoords="offset points", ha="right", color=TEXTO_2, fontsize=8)
+    tipo = "percentiles acumulados desde el inicio" if acumulados else "percentiles de los últimos 10 s"
+    ax.set_title(f"Latencia percibida por el usuario (s), medida por Locust ({tipo})")
     ax.legend(loc="upper left", ncols=3)
-    ax.set_ylim(bottom=0)
+    ax.set_ylim(0, 2.3)
     formato_tiempo(ax)
     fig.savefig(carpeta / "2_latencias_cliente.png", bbox_inches="tight")
     plt.close(fig)
@@ -134,7 +151,7 @@ def main(carpeta: Path):
         if col in cw:
             a.plot(cw.index, cw[col], color=color, label=col)
     a.set_title("Tiempo de respuesta de las tareas según el ALB (s)")
-    a.legend(loc="upper left", ncols=3)
+    a.legend(loc="lower right", bbox_to_anchor=(1, 1.0), ncols=3)
     a.set_ylim(bottom=0)
     if "cpu" in cw:
         b.plot(cw.index, cw["cpu"], color=AZUL)
@@ -149,17 +166,33 @@ def main(carpeta: Path):
     plt.close(fig)
 
     # 4. Distribución de solicitudes por tarea (balanceo least outstanding requests).
+    # Se mide solo en los intervalos en que estaban activas todas las tareas del máximo: si se suma toda
+    # la prueba, las tareas que vivieron más tiempo parecen "recibir más" y se esconde el balanceo.
     dist_archivo = carpeta / "distribucion_tareas.csv"
     dist = pd.read_csv(dist_archivo) if dist_archivo.exists() else pd.DataFrame()
-    totales = dist.drop(columns=["timestamp"]).sum().sort_values() if len(dist) else pd.Series(dtype=float)
-    if len(totales):
-        fig, ax = plt.subplots(figsize=(10, 0.5 * len(totales) + 1.2))
+    reparto = {}
+    if len(dist):
+        cuentas = dist.drop(columns=["timestamp"])
+        # Conjunto de tareas activas en cada intervalo de 10 s; se toma el conjunto de N = máximo de tareas
+        # deseadas que más intervalos duró (excluye transiciones como la prueba de resiliencia).
+        conjuntos = cuentas.apply(lambda f: frozenset(f.index[f > 0]), axis=1)
+        maximo = int(ecs["deseadas"].max()) if len(ecs) else conjuntos.map(len).max()
+        candidatos = conjuntos[conjuntos.map(len) == maximo]
+        estable = candidatos.value_counts().idxmax() if len(candidatos) else conjuntos.value_counts().idxmax()
+        pleno = cuentas[conjuntos == estable]
+        totales = pleno.sum()
+        totales = totales[totales > 0].sort_values()
+        dist_t = pd.to_datetime(dist.loc[pleno.index, "timestamp"], unit="s", utc=True).dt.tz_convert(ZONA)
+        cv = 100 * totales.std() / totales.mean()
+        reparto = {"tareas": len(totales), "desde": dist_t.min(), "hasta": dist_t.max(), "cv": cv, "solicitudes": totales.sum()}
+        fig, ax = plt.subplots(figsize=(10, 0.5 * len(totales) + 1.4))
         ax.barh([t[:8] for t in totales.index], totales.values, color=AZUL, height=0.6)
         for i, v in enumerate(totales.values):
             ax.annotate(f"{miles(v)} ({100 * v / totales.sum():.1f} %)", (v, i), xytext=(4, 0), textcoords="offset points", va="center", color=TEXTO_2, fontsize=9)
-        ax.set_title("Solicitudes atendidas por cada tarea (X-Task-Id)")
+        ax.set_title(f"Solicitudes por tarea con las {len(totales)} tareas activas "
+                     f"({reparto['desde']:%H:%M}–{reparto['hasta']:%H:%M}); coeficiente de variación {cv:.1f} %")
         ax.grid(axis="y", visible=False)
-        ax.set_xlim(0, totales.max() * 1.2)
+        ax.set_xlim(0, totales.max() * 1.25)
         fig.savefig(carpeta / "4_distribucion_por_tarea.png", bbox_inches="tight")
         plt.close(fig)
 
@@ -184,6 +217,7 @@ def main(carpeta: Path):
 - Tareas sanas al final de la ventana de CloudWatch: {ultimo_sanas:.0f} (debe volver a 2 tras la carga).
 - CPU máxima promedio del servicio (por minuto): {cw['cpu'].max() if 'cpu' in cw else float('nan'):.0f} %.
 - Errores 5xx del lado del servidor: {cw['err5xx'].sum() if 'err5xx' in cw else 0:.0f}.
+- Balanceo con las {reparto.get('tareas', '?')} tareas activas ({miles(reparto.get('solicitudes', 0))} solicitudes): coeficiente de variación del reparto **{reparto.get('cv', float('nan')):.1f} %** (0 % = reparto perfecto).
 
 | Endpoint | Solicitudes | Fallas | p50 (ms) | p95 (ms) | p99 (ms) | Solicitudes/s |
 |---|---|---|---|---|---|---|
