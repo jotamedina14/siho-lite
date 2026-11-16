@@ -3,7 +3,7 @@
 Todas las capturas son de la cuenta personal del estudiante en us-east-1, tomadas el 16 de noviembre de 2026.
 Los datos que aparecen en la aplicación son 100 % sintéticos.
 
-## Aplicación en AWS (`aws/app/`), por CloudFront con HTTPS
+## Aplicación en AWS (`app/`), por CloudFront con HTTPS
 
 | Archivo | Qué demuestra | Sección del informe |
 |---|---|---|
@@ -17,7 +17,9 @@ Los datos que aparecen en la aplicación son 100 % sintéticos.
 | `08_reporte_ocupacion.png` | Reporte de ocupación (ruta "pesada" de las pruebas de carga) | 7. Implementación |
 | `09_auditoria.png` | Registro de auditoría de solo inserción (quién consultó qué) | 6. Trazabilidad |
 
-## Consola de AWS y pruebas (`aws/`)
+## Consola de AWS y pruebas (`consola/`)
+
+En el repositorio público solo están las copias con el número de cuenta y la IP pixelados; las originales se conservan fuera de git.
 
 | Archivo | Qué demuestra | Control MinTIC / sección |
 |---|---|---|

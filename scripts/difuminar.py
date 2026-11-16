@@ -3,7 +3,7 @@
 Usa OCR (RapidOCR) para encontrar cada línea de texto que contenga los valores y pixela esa zona.
 Después vuelve a pasar el OCR sobre la copia para verificar que no quedó ninguna aparición.
 
-    .venv/bin/python scripts/difuminar.py docs/capturas/aws docs/capturas/informe [ID-CUENTA] [IP-PUBLICA]
+    .venv/bin/python scripts/difuminar.py docs/capturas/_privado/consola_originales docs/capturas/consola <ID-CUENTA> <IP-PUBLICA>
 """
 
 import sys

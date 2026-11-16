@@ -4,7 +4,7 @@ Uso local (login de desarrollo por rol):
     .venv/bin/python scripts/capturas_app.py --base http://localhost:5173 --salida docs/capturas/local
 
 Uso en AWS (token de Cognito obtenido por API para el usuario de prueba, ver loadtest/cognito_token.py):
-    .venv/bin/python scripts/capturas_app.py --base https://dxxxx.cloudfront.net --modo cognito --salida docs/capturas/aws
+    .venv/bin/python scripts/capturas_app.py --base https://dxxxx.cloudfront.net --modo cognito --salida docs/capturas/app
 
 También funciona como prueba funcional de extremo a extremo: falla si un paso no aparece en pantalla.
 """

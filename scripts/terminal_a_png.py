@@ -1,6 +1,6 @@
 """Convierte la salida de un comando (archivo de texto) en una captura con estilo de terminal.
 
-    .venv/bin/python scripts/terminal_a_png.py docs/evidencias/seguridad.txt docs/capturas/aws/seguridad.png
+    .venv/bin/python scripts/terminal_a_png.py docs/evidencias/seguridad.txt docs/capturas/_privado/consola_originales/01_pruebas_seguridad_terminal.png
 """
 
 import html
