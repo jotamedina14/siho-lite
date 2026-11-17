@@ -53,6 +53,21 @@ Todos los datos salen de `docs/resultados/escalones/`, `docs/bitacora.md`, `docs
 ### Escenario de valle (tráfico nocturno de fondo, 18:37 a 19:02)
 5 usuarios durante 25 minutos: **4.309 solicitudes, 0 fallidas**, p50 99 ms y p95 150 ms (resumen final de Locust en `docs/resultados/valle/locust_consola.log`). Durante este escenario el servicio volvió a 2 tareas y se redesplegó la imagen corregida sin errores.
 
+### Las 13 pruebas automáticas (Vitest + supertest contra PostgreSQL 16 real, todas en verde)
+- 1. GET /health responde ok con la base conectada
+- 2. rechaza /api sin token (401)
+- 3. rechaza un token con firma inválida (401)
+- 4. /api/info devuelve la tarea y la zona que respondió
+- 5. médico no puede crear pacientes (403)
+- 6. admisiones crea un paciente y no permite duplicar el documento
+- 7. valida la entrada (400)
+- 8. consultar la ficha registra auditoría
+- 9. no permite agendar dos citas cruzadas para el mismo profesional (409)
+- 10. urgencias exige triage
+- 11. entrega URL prefirmada PUT con checksum y solo permite PDF/JPG/PNG
+- 12. el reporte de ocupación es solo para admin
+- 13. el rol de la aplicación no puede modificar ni borrar la auditoría
+
 ## 3. Tabla 7 completa (prueba por escalones, 16 nov 2026, 18:00 a 18:25 hora de Colombia)
 
 Cada escalón sin su primer minuto (rampa). **Cliente** = medido por Locust desde Colombia (incluye internet), a partir de los percentiles por ventana de 10 s del reporte HTML (`locust_historial_ventana.csv`): se da la mediana de las ventanas y el peor valor. **ALB** = tiempo de respuesta de las tareas, por minuto, desde CloudWatch.
