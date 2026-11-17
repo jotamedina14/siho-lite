@@ -55,14 +55,16 @@ Todos los datos salen de `docs/resultados/escalones/`, `docs/bitacora.md`, `docs
 
 ## 3. Tabla 7 completa (prueba por escalones, 16 nov 2026, 18:00 a 18:25 hora de Colombia)
 
-Promedios de cada escalón sin su primer minuto (rampa). La latencia por escalón es la del **ALB** (servidor), porque Locust guarda percentiles acumulados y no por escalón.
+Cada escalón sin su primer minuto (rampa). **Cliente** = medido por Locust desde Colombia (incluye internet), a partir de los percentiles por ventana de 10 s del reporte HTML (`locust_historial_ventana.csv`): se da la mediana de las ventanas y el peor valor. **ALB** = tiempo de respuesta de las tareas, por minuto, desde CloudWatch.
 
-| Escalón | Usuarios | Solicitudes por segundo | Solicitudes por minuto | p95 en el ALB (prom / máx) | CPU servicio (prom / máx) | Errores | Tareas |
-|---|---|---|---|---|---|---|---|
-| 1 | 20 | 11,7 | 705 | 16 / 17 ms | 9,7 / 10,4 % | 0 | 2 |
-| 2 | 60 | 34,9 | 2.094 | 22 / 37 ms | 18,3 / 22,2 % | 0 | 2 → 3 (18:06) → 6 (18:09) |
-| 3 | 120 | 70,0 | 4.199 | 27 / 42 ms | 17,9 / 19,5 % | 0 | 6 (5 por 1 min en la prueba de resiliencia) |
-| 4 | 180 | 104,0 | 6.240 | 36 / 44 ms | 23,6 / 24,0 % | 0 | 6 |
+| Escalón | Usuarios | Solicitudes/s | Solicitudes/min | p95 cliente (mediana / peor ventana) | p95 ALB (prom / máx) | CPU API (prom / máx) | Errores | Tareas |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 20 | 11,7 | 705 | 110 / 240 ms | 16 / 17 ms | 9,7 / 10,4 % | 0 | 2 |
+| 2 | 60 | 34,9 | 2.094 | 120 / 570 ms | 22 / 37 ms | 18,3 / 22,2 % | 0 | 2 → 3 (18:06) → 6 (18:09) |
+| 3 | 120 | 70,0 | 4.199 | 115 / 770 ms | 27 / 42 ms | 17,9 / 19,5 % | 0 | 6 (5 durante 1 min, prueba de resiliencia) |
+| 4 | 180 | 104,0 | 6.240 | 120 / 1.700 ms | 36 / 44 ms | 23,6 / 24,0 % | 0 | 6 |
+
+Los picos de la peor ventana coinciden con eventos: la llegada de tareas nuevas (escalón 2), la prueba de resiliencia (escalón 3) y una ventana de 10 s a las 18:17 con 180 usuarios (escalón 4). Todos quedan por debajo del criterio de 2 s.
 
 Totales de la prueba (cliente, incluye el viaje por internet Colombia → Virginia):
 - **68.413 solicitudes, 0 fallidas (0,00 %)**, 0 errores 5xx en el servidor.
