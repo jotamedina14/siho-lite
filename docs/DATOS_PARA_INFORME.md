@@ -44,11 +44,14 @@ Todos los datos salen de `docs/resultados/escalones/`, `docs/bitacora.md`, `docs
 | Recursos creados por Terraform | **85** (2 de ECR primero y 83 después) |
 | Datos sintéticos (seed) | **5.000 pacientes, 30 profesionales, 20.000 citas y 3.000 admisiones** |
 | Pruebas automáticas | 13 de integración, todas en verde |
-| Vulnerabilidad | **CVE-2026-4738**, crítica, paquete **`zlib` 1.3.2-r1** de la imagen base `node:22-alpine` (Alpine 3.24); corregida con **`zlib` 1.4-r0** (`apk upgrade` en el Dockerfile). Resultado después: *pendiente, se agrega al redesplegar* |
+| Vulnerabilidad | **CVE-2026-4738**, crítica, paquete **`zlib` 1.3.2-r1** de la imagen base `node:22-alpine` (Alpine 3.24); corregida con **`zlib` 1.4-r0** (`apk upgrade` en el Dockerfile). Resultado después (imagen `v20261116-185035-47f7907`, escaneada a las 18:51): **0 vulnerabilidades** (críticas, altas, medias y bajas). Redespliegue sin cortes a las 18:50–18:54, con tráfico activo y **0 errores** |
 | Acción programada | **6:15 a. m.** hora de Colombia: mínimo 3 tareas (máximo 6); **10:30 a. m.**: vuelve a mínimo 2 (máximo 6) |
 | Retiro gradual de tareas | 30 s (deregistration delay); health check `/health` cada 10 s |
-| Tiempo en volver a 2 tareas | *pendiente* |
+| Tiempo en volver a 2 tareas | El pico terminó a las 18:20. Entre las 18:25 y las 18:37 no hubo tráfico y el servicio **no redujo** (la métrica de solicitudes por tarea no tenía datos; ver retos). Con tráfico de fondo (5 usuarios desde las 18:37:02) bajó **una tarea cada ~4 minutos**: 6 → 5 (18:37:48), → 4 (18:41:25), → 3 (18:45:33), → **2 (18:49:40)**, es decir **12,6 minutos** desde que volvió a haber tráfico. La reducción es gradual por el enfriamiento de 180 s configurado para bajar |
 | Costo real | *pendiente* (Cost Explorer tarda hasta 24 h en mostrar el gasto; se reporta al día siguiente) |
+
+### Escenario de valle (tráfico nocturno de fondo, 18:37 a 19:02)
+5 usuarios durante 25 minutos: **4.309 solicitudes, 0 fallidas**, p50 99 ms y p95 150 ms (resumen final de Locust en `docs/resultados/valle/locust_consola.log`). Durante este escenario el servicio volvió a 2 tareas y se redesplegó la imagen corregida sin errores.
 
 ## 3. Tabla 7 completa (prueba por escalones, 16 nov 2026, 18:00 a 18:25 hora de Colombia)
 
@@ -74,7 +77,7 @@ Totales de la prueba (cliente, incluye el viaje por internet Colombia → Virgin
 |---|---|
 | Figura 1. Arquitectura | `docs/arquitectura/arquitectura.png` (SVG editable al lado) |
 | Figura 2. Solicitudes por segundo y latencia | `1_carga_y_escalado.png` (usuarios, solicitudes/s y tareas) y `2_latencias_cliente.png` |
-| Figura 3. Tareas frente a la carga (ciclo completo) | `6_ciclo_completo_tareas.png` (*pendiente*, cuando el servicio vuelva a 2) |
+| Figura 3. Tareas frente a la carga (ciclo completo) | `docs/resultados/6_ciclo_completo_tareas.png`: sube de 2 a 6, espera sin tráfico, baja a 2 a las 18:49 y el redespliegue no causa errores |
 | Figura 4. CPU y solicitudes por tarea | `5_cpu_vs_solicitudes_por_tarea.png` |
 | Figura 5 sugerida. Reparto entre tareas | `4_distribucion_por_tarea.png`: es la mejor evidencia del balanceo |
 | Complementaria | `3_servidor_latencia_y_cpu.png` (latencia del ALB y CPU) |

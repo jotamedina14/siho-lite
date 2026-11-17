@@ -50,7 +50,7 @@ def main(origen: Path, destino: Path, valores: list[str]):
             pixelar(img, c)
         # El OCR no siempre lee el texto pequeño del encabezado de la consola, donde siempre aparece
         # "usuario (número de cuenta)": se pixela esa zona fija en todas las capturas de consola.
-        if ruta.suffix == ".jpg" and img.size == (1568, 737):
+        if ruta.suffix == ".jpg" and img.width == 1568:
             pixelar(img, (1370, 0, 1568, 21, "encabezado"))
         salida = destino / ruta.name
         img.save(salida, quality=92) if salida.suffix == ".jpg" else img.save(salida)
