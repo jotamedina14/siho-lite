@@ -46,6 +46,7 @@ En el repositorio público solo están las copias con el número de cuenta y la 
 | `20_cloudwatch_dashboard_pico_180_usuarios.jpg` | Dashboard durante el pico: solicitudes, latencia p50/p95/p99, tareas sanas 2→3→6, CPU, errores y RDS | Pruebas y resultados |
 | `21_cloudwatch_alarma_autoescalado_disparada.jpg` | Alarma de autoescalado en estado ALARM durante la carga; alarmas propias en OK | Detección y respuesta |
 | `22_ecs_eventos_reduccion_a_2_tareas.jpg` | Eventos de la reducción: la política de solicitudes baja el servicio de 6 a 5, 4, 3 y 2 tareas (18:37 a 18:49) | Escalado (elasticidad completa) |
+| `24_cloudwatch_dashboard_ciclo_completo.jpg` | Dashboard de 17:55 a 19:05: solicitudes hasta 6.330 por minuto, tareas sanas 2 → 6 → 2, 0 errores 5xx, CPU de la API ≤ 24 % y de RDS ~41 % | Pruebas y resultados (ciclo completo) |
 | `23_ecr_escaneo_despues_0_vulnerabilidades.jpg` | Escaneo de la imagen corregida (`zlib` 1.4-r0): 0 vulnerabilidades críticas, altas, medias ni bajas | Gestión de vulnerabilidades (después) |
 
 ## Local (`local/`)
