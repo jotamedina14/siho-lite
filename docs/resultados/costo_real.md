@@ -6,7 +6,7 @@ Consulta hecha el 23 de noviembre de 2026 con `aws ce get-cost-and-usage` (costo
 
 | Concepto | Valor |
 |---|---|
-| Encendido | Desde el 16 de noviembre de 2026 (tarde). Se destruye el [fecha del destroy] |
+| Encendido | Desde el 16 de noviembre de 2026 (tarde). Destruido el 23 de noviembre de 2026 (21:07, hora Colombia) |
 | Costo de SIHO Lite del 16 al 23 de noviembre | **≈ USD 16,25** |
 | Costo diario en estado estable (2 tareas, 17 a 22 de noviembre) | **USD 2,49 por día** |
 | Equivalente mensual | ≈ USD 75 al mes (lo estimado eran USD 80: 7 % menos) |
