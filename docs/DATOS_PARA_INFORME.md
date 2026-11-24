@@ -48,7 +48,7 @@ Todos los datos salen de `docs/resultados/escalones/`, `docs/bitacora.md`, `docs
 | Acción programada | **6:15 a. m.** hora de Colombia: mínimo 3 tareas (máximo 6); **10:30 a. m.**: vuelve a mínimo 2 (máximo 6) |
 | Retiro gradual de tareas | 30 s (deregistration delay); health check `/health` cada 10 s |
 | Tiempo en volver a 2 tareas | El pico terminó a las 18:20. Entre las 18:25 y las 18:37 no hubo tráfico y el servicio **no redujo** (la métrica de solicitudes por tarea no tenía datos; ver retos). Con tráfico de fondo (5 usuarios desde las 18:37:02) bajó **una tarea cada ~4 minutos**: 6 → 5 (18:37:48), → 4 (18:41:25), → 3 (18:45:33), → **2 (18:49:40)**, es decir **12,6 minutos** desde que volvió a haber tráfico. La reducción es gradual por el enfriamiento de 180 s configurado para bajar |
-| Costo real | *pendiente* (Cost Explorer tarda hasta 24 h en mostrar el gasto; se reporta al día siguiente) |
+| Costo real | ≈ USD 16,25 del 16 al 23 de noviembre; USD 2,49 por día en estado estable (≈ USD 75 al mes frente a USD 80 estimados); 100 % pagado con créditos. Detalle en `docs/resultados/costo_real.md` |
 
 ### Escenario de valle (tráfico nocturno de fondo, 18:37 a 19:02)
 5 usuarios durante 25 minutos: **4.309 solicitudes, 0 fallidas**, p50 99 ms y p95 150 ms (resumen final de Locust en `docs/resultados/valle/locust_consola.log`). Durante este escenario el servicio volvió a 2 tareas y se redesplegó la imagen corregida sin errores.
